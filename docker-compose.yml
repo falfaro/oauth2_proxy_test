@@ -1,0 +1,100 @@
+version: '3'
+
+services:
+  # Description of Containers:
+  #
+  #   authproxy   This is the oauth2_proxy container
+  #   upstream    This is the upstream app that is protected by the oauth2_proxy
+  #   dex         This is a CoreOS Dex OpenID Connect Server acting as an ID/auth mock
+  #
+  # In order for the log-in test to work, one must point a browser to the "firefox"
+  # container at port 5800, where Firefox is exposed to the outer world via a VNC
+  # session. From the containerized Firefox, browse to http://172.30.0.4/ to trigger
+  # OAuth2 proxy authentication.
+  #
+  # NOTE(felipe): The reason for running a containerized Firefox for interacting with
+  # OAuth2 proxy is that under Docker for Mac/Edge it is not possible to reach any of
+  # the containers directly from macOS (because all Docker containers are running inside
+  # an HyperKit VM which does not bridge Docker networking to the macOS host). Or said
+  # in a different way, Docker for Mac does not implement a docker0 bridge on the host:
+  # https://docs.docker.com/docker-for-mac/networking/#there-is-no-docker0-bridge-on-macos
+
+  firefox:
+    container_name: firefox
+    image: jlesage/firefox
+    shm_size: '2gb'
+    networks:
+      demo-net:
+        ipv4_address: 172.30.0.2
+    ports:
+      - "5800:5800"
+
+  # CoreOS Dex as an OpenID Connect mock server
+  dex:
+    container_name: dex
+    image: quay.io/coreos/dex:v2.10.0
+    networks:
+      demo-net:
+        ipv4_address: 172.30.0.3
+    ports:
+      - "5556:5556"
+    volumes:
+      - ./dex/examples:/examples:rw
+    command: [
+      "serve",
+      "examples/config-dev.yaml"
+    ]
+
+  # Azure OAuth Proxy
+  authproxy:
+    container_name: authproxy
+    build: oauth2_proxy
+    # NOTE(felipe): Bitnami oauth2-proxy image does not seem to support
+    # --oidc-issuer-url command-line flag for OpenID Connect.
+    #image: bitnami/oauth2-proxy:2.2.0-r15
+    networks:
+      demo-net:
+        ipv4_address: 172.30.0.4
+    ports:
+      - "4180:4180"
+    depends_on:
+      - dex
+    command: [
+      "-wait",
+      "http://172.30.0.3:5556/dex/.well-known/openid-configuration",
+      "-timeout",
+      "1m",
+      "/usr/local/bin/oauth2_proxy",
+      "--email-domain=*",
+      "--upstream=http://172.30.0.5:80",
+      "--http-address=http://:4180",
+      "--redirect-url=http://172.30.0.4:4180/oath2/callback",
+      "--cookie-secret=secretsecret",
+      "--cookie-domain=172.30.0.4",
+      "--cookie-secure=false",
+      "--provider=oidc",
+      "--oidc-issuer-url=http://172.30.0.3:5556/dex",
+      "--client-id=example-app",
+      "--client-secret=ZXhhbXBsZS1hcHAtc2VjcmV0",
+      "--skip-provider-button",
+    ]
+
+  # NGINX example app
+  upstream:
+    container_name: upstream
+    build: upstream/
+    networks:
+      demo-net:
+        ipv4_address: 172.30.0.5
+    depends_on:
+      - authproxy
+    ports:
+      - "80:80"
+
+networks:
+  demo-net:
+    ipam:
+      config:
+        - subnet: 172.30.0.5/16
+
+# vim: sw=2 sts=2 et

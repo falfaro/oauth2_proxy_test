@@ -1,3 +1,0 @@
-[submodule "oauth2_proxy"]
-	path = oauth2_proxy
-	url = https://github.com/falfaro/oauth2_proxy.git

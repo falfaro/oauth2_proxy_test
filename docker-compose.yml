@@ -48,10 +48,7 @@ services:
   # Azure OAuth Proxy
   authproxy:
     container_name: authproxy
-    build: oauth2_proxy
-    # NOTE(felipe): Bitnami oauth2-proxy image does not seem to support
-    # --oidc-issuer-url command-line flag for OpenID Connect.
-    #image: bitnami/oauth2-proxy:2.2.0-r15
+    image: falfaro/oauth2_proxy
     networks:
       demo-net:
         ipv4_address: 172.30.0.4

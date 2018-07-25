@@ -56,15 +56,10 @@ services:
       demo-net:
         ipv4_address: 172.30.0.4
     ports:
-      - "4180:4180"
+      - "8080:4180"
     depends_on:
       - dex
     command: [
-      "-wait",
-      "http://172.30.0.3:5556/dex/.well-known/openid-configuration",
-      "-timeout",
-      "1m",
-      "/usr/local/bin/oauth2_proxy",
       "--email-domain=*",
       "--upstream=http://172.30.0.5:80",
       "--http-address=http://:4180",

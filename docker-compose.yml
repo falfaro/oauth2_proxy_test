@@ -48,7 +48,7 @@ services:
   # Azure OAuth Proxy
   authproxy:
     container_name: authproxy
-    image: falfaro/oauth2_proxy
+    image: bitnami/oauth2-proxy:0.20180625.74543-debian-9-r6
     networks:
       demo-net:
         ipv4_address: 172.30.0.4

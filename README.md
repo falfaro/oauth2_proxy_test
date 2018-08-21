@@ -31,3 +31,11 @@ to access Firefox running in the container. Point Firefox to the `authproxy` con
 access the protected resource. Once the OAuth2 flow has been completed, browsing to
 `http://172.30.0.4:4180` should show the protected resource without triggering any
 authentication.
+
+To run the automated test (written in Go), launch the Docker stack, then:
+
+```
+docker exec -it firefox bash
+cd /go
+go run test.go
+```

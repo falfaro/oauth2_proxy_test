@@ -21,11 +21,13 @@ services:
 
   firefox:
     container_name: firefox
-    image: jlesage/firefox
+    build: firefox/
     shm_size: '2gb'
     networks:
       demo-net:
         ipv4_address: 172.30.0.2
+    volumes:
+      - ./go:/go
     ports:
       - "5800:5800"
 
